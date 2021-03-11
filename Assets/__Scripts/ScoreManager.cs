@@ -54,18 +54,18 @@ public class ScoreManager : MonoBehaviour
         SCORE_FROM_PREV_ROUND = 0;
     }
 
-    static public void EVENT (eScoreEvent evt)
+    static public void EVENT (eScoreEvent evt, bool isGold)
     {
         try
         {
-            S.Event(evt);
+            S.Event(evt, isGold);
         } catch (System.NullReferenceException nre)
         {
             Debug.LogError("ScoreManager:EVENT() called while S=null.\n" + nre);
         }
     }
 
-    void Event(eScoreEvent evt)
+    void Event(eScoreEvent evt, bool isGold)
     {
         switch (evt)
         {
@@ -80,6 +80,10 @@ public class ScoreManager : MonoBehaviour
 
             case eScoreEvent.mine: // Remove a mine card
                 chain++; // Increase the score chain
+                Debug.Log("isGold: " + isGold);
+                if (isGold) { scoreRun += (2 * chain); }
+                else { scoreRun += chain; }
+                Debug.Log("Current score: " + scoreRun);
                 scoreRun += chain; // add score for this card to run
                 break;
         }

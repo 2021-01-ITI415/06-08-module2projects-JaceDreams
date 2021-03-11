@@ -82,6 +82,7 @@ public class Prospector : MonoBehaviour
 		Deck.Shuffle(ref deck.cards);
 
 
+
 		layout = GetComponent<Layout>();
 		layout.ReadLayout(layoutXML.text);
 		drawPile = ConvertListCardsToListCardProspectors(deck.cards);
@@ -121,6 +122,20 @@ public class Prospector : MonoBehaviour
 		{
 			cp = Draw();
 			cp.faceUp = tSD.faceUp;
+
+			// 10% chance to be a gold card
+			float goldChance = Random.Range(0, 100);
+			if (goldChance < 10)
+			{
+				SpriteRenderer front = cp.GetComponent<SpriteRenderer>();
+				front.sprite = deck.cardFrontGold;
+
+				SpriteRenderer back = cp.back.GetComponent<SpriteRenderer>();
+				back.sprite = deck.cardBackGold;
+
+				cp.isGold = true;
+			}
+
 			cp.transform.parent = layoutAnchor;
 			cp.transform.localPosition = new Vector3
 			(
@@ -264,8 +279,8 @@ public class Prospector : MonoBehaviour
 				MoveToDiscard(target); //Moves the target to the discardPile
 				MoveToTarget(Draw()); //Moves the next drawn card to the target
 				UpdateDrawPile(); //Restacks the DrawPile
-				ScoreManager.EVENT(eScoreEvent.draw);
-				FloatingScoreHandler(eScoreEvent.draw);
+				ScoreManager.EVENT(eScoreEvent.draw, cd.isGold);
+				FloatingScoreHandler(eScoreEvent.draw, cd.isGold);
 				break;
 
 			case eCardState.tableau:
@@ -290,8 +305,8 @@ public class Prospector : MonoBehaviour
 				tableau.Remove(cd); // Remove it from the tableau list
 				MoveToTarget(cd); // Make it the target card\
 				SetTableauFaces(); // Update tableau card face-ups
-				ScoreManager.EVENT(eScoreEvent.mine);
-				FloatingScoreHandler(eScoreEvent.mine);
+				ScoreManager.EVENT(eScoreEvent.mine, cd.isGold);
+				FloatingScoreHandler(eScoreEvent.mine, cd.isGold);
 				break;
 		}
 		// Check to see whether the game is over or not
@@ -341,8 +356,8 @@ public class Prospector : MonoBehaviour
 			roundResultText.text = "You won this round!\nRound Score: " + score;
 			ShowResultsUI(true);
 			// print("Game Over. You Won! :");
-			ScoreManager.EVENT(eScoreEvent.gameWin);
-			FloatingScoreHandler(eScoreEvent.gameWin);
+			ScoreManager.EVENT(eScoreEvent.gameWin, false);
+			FloatingScoreHandler(eScoreEvent.gameWin, false);
 		}
 		else
 		{
@@ -355,8 +370,8 @@ public class Prospector : MonoBehaviour
             } 
             ShowResultsUI( true ); 
 			// print("Game Over. You Lost! :");
-			ScoreManager.EVENT(eScoreEvent.gameLoss);
-			FloatingScoreHandler(eScoreEvent.gameLoss);
+			ScoreManager.EVENT(eScoreEvent.gameLoss, false);
+			FloatingScoreHandler(eScoreEvent.gameLoss, false);
 		}
 		// Reload the scene, resetting the game
 		// SceneManager.LoadScene("__Prospector_Scene_0");
@@ -370,6 +385,7 @@ public class Prospector : MonoBehaviour
          // Reload the scene, resetting the game 
          SceneManager.LoadScene("__Prospector_Scene_0"); 
     }
+
 
 	// Return true if the two cards are adjacent in rank (A & K wrap around)
 	public bool AdjacentRank(CardProspector c0, CardProspector c1)
@@ -402,7 +418,7 @@ public class Prospector : MonoBehaviour
 	}
 
 	// Handle FloatingScore movement 
-	void FloatingScoreHandler(eScoreEvent evt)
+	void FloatingScoreHandler(eScoreEvent evt, bool isGold)
 	{
 		List<Vector2> fsPts;
 			switch (evt)
@@ -437,7 +453,9 @@ public class Prospector : MonoBehaviour
 					fsPts.Add(p0);
 					fsPts.Add(fsPosMid);
 					fsPts.Add(fsPosRun);
-					fs = Scoreboard.S.CreateFloatingScore(ScoreManager.CHAIN, fsPts);
+					int fsNum = ScoreManager.CHAIN;
+					if (isGold) { fsNum *= 2;}
+					fs = Scoreboard.S.CreateFloatingScore(fsNum, fsPts);
 					fs.fontSizes = new List<float>(new float[] { 4, 50, 28 });
 					if (fsRun == null)
 					{
