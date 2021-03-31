@@ -28,11 +28,11 @@ public class Pyramid : MonoBehaviour
 	[Header("Set Dynamically")]
 	public Deck deck;
 	public Layout layout;
-	public List<CardProspector> drawPile;
+	public List<CardPyramid> drawPile;
 	public Transform layoutAnchor;
-	public CardProspector target;
-	public List<CardProspector> tableau;
-	public List<CardProspector> discardPile;
+	public CardPyramid target;
+	public List<CardPyramid> tableau;
+	public List<CardPyramid> discardPile;
 	public FloatingScore fsRun;
 
 
@@ -85,25 +85,25 @@ public class Pyramid : MonoBehaviour
 
 		layout = GetComponent<Layout>();
 		layout.ReadLayout(layoutXML.text);
-		drawPile = ConvertListCardsToListCardProspectors(deck.cards);
+		drawPile = ConvertListCardsToListCardPyramids(deck.cards);
 		LayoutGame();
 	}
 
-	List<CardProspector> ConvertListCardsToListCardProspectors(List<Card> lCD)
+	List<CardPyramid> ConvertListCardsToListCardPyramids(List<Card> lCD)
 	{
-		List<CardProspector> lCP = new List<CardProspector>();
-		CardProspector tCP;
+		List<CardPyramid> lCP = new List<CardPyramid>();
+		CardPyramid tCP;
 		foreach (Card tCD in lCD)
 		{
-			tCP = tCD as CardProspector;
+			tCP = tCD as CardPyramid;
 			lCP.Add(tCP);
 		}
 		return (lCP);
 	}
 
-	CardProspector Draw()
+	CardPyramid Draw()
 	{
-		CardProspector cd = drawPile[0];
+		CardPyramid cd = drawPile[0];
 		drawPile.RemoveAt(0);
 		return (cd);
 	}
@@ -116,7 +116,7 @@ public class Pyramid : MonoBehaviour
 			layoutAnchor = tGO.transform;
 			layoutAnchor.transform.position = layoutCenter;
 		}
-		CardProspector cp;
+		CardPyramid cp;
 		// Follow the layout
 		foreach (SlotDef tSD in layout.slotDefs)
 		{
@@ -144,14 +144,14 @@ public class Pyramid : MonoBehaviour
 				-tSD.layerID);
 			cp.layoutID = tSD.id;
 			cp.slotDef = tSD;
-			cp.state = eCardState.tableau;
+			cp.state = pCardState.tableau;
 			cp.SetSortingLayerName(tSD.layerName);
 
-			tableau.Add(cp); // Add this CardProspector to the List<> tableau
+			tableau.Add(cp); // Add this CardPyramid to the List<> tableau
 		}
 
 		// Set which cards are hiding others
-		foreach (CardProspector tCP in tableau)
+		foreach (CardPyramid tCP in tableau)
 		{
 			foreach (int hid in tCP.slotDef.hiddenBy)
 			{
@@ -167,10 +167,10 @@ public class Pyramid : MonoBehaviour
 		UpdateDrawPile();
 	}
 
-	//Convert from the layoutID int to the CardProspector with that ID
-	CardProspector FindCardByLayoutID(int layoutID)
+	//Convert from the layoutID int to the CardPyramid with that ID
+	CardPyramid FindCardByLayoutID(int layoutID)
 	{
-		foreach (CardProspector tCP in tableau)
+		foreach (CardPyramid tCP in tableau)
 		{
 			//Search through all cards in the tableau List<>
 			if (tCP.layoutID == layoutID)
@@ -186,13 +186,13 @@ public class Pyramid : MonoBehaviour
 	//This turns cards in the Mine face-up or face-down
 	void SetTableauFaces()
 	{
-		foreach (CardProspector cd in tableau)
+		foreach (CardPyramid cd in tableau)
 		{
 			bool fup = true; //Assume the card will be face-up
-			foreach (CardProspector cover in cd.hiddenBy)
+			foreach (CardPyramid cover in cd.hiddenBy)
 			{
 				//If either of the covering cards are in the tableau
-				if (cover.state == eCardState.tableau)
+				if (cover.state == pCardState.tableau)
 				{
 					fup = false; //then this card is face-down
 				}
@@ -202,10 +202,10 @@ public class Pyramid : MonoBehaviour
 	}
 
 	//Moves the current target to the discardPile
-	void MoveToDiscard(CardProspector cd)
+	void MoveToDiscard(CardPyramid cd)
 	{
 		//Set the state of the card to discard
-		cd.state = eCardState.discard;
+		cd.state = pCardState.discard;
 		discardPile.Add(cd); //Add it to the discardPile List<>
 		cd.transform.parent = layoutAnchor; //Update its transform parent
 		cd.transform.localPosition = new Vector3(
@@ -220,12 +220,12 @@ public class Pyramid : MonoBehaviour
 	}
 
 	//Make cd the new target card
-	void MoveToTarget(CardProspector cd)
+	void MoveToTarget(CardPyramid cd)
 	{
 		//If there is currently a target card, move it to discardPile
 		if (target != null) MoveToDiscard(target);
 		target = cd; //cd is the new target
-		cd.state = eCardState.target;
+		cd.state = pCardState.target;
 		cd.transform.parent = layoutAnchor;
 
 		//Move to the target position
@@ -243,7 +243,7 @@ public class Pyramid : MonoBehaviour
 	//Arranges all the cards of the drawPile to show how many are left
 	void UpdateDrawPile()
 	{
-		CardProspector cd;
+		CardPyramid cd;
 
 		//Go through all the cards of the drawPile
 		for (int i = 0; i < drawPile.Count; i++)
@@ -259,22 +259,22 @@ public class Pyramid : MonoBehaviour
 				-layout.drawPile.layerID + 0.1f * i);
 
 			cd.faceUp = false; //Make them all face-down
-			cd.state = eCardState.drawpile;
+			cd.state = pCardState.drawpile;
 			//Set the depth sorting
 			cd.SetSortingLayerName(layout.drawPile.layerName);
 			cd.SetSortOrder(-10 * i);
 		}
 	}
 
-	public void CardClicked(CardProspector cd)
+	public void CardClicked(CardPyramid cd)
 	{
 		//The reaction is determined by the state of the clicked card
 		switch (cd.state)
 		{
-			case eCardState.target:
+			case pCardState.target:
 				//Clicking the target card does nothing
 				break;
-			case eCardState.drawpile:
+			case pCardState.drawpile:
 				//Clicking any card in the drawPile will draw the next card
 				MoveToDiscard(target); //Moves the target to the discardPile
 				MoveToTarget(Draw()); //Moves the next drawn card to the target
@@ -283,7 +283,7 @@ public class Pyramid : MonoBehaviour
 				FloatingScoreHandler(eScoreEvent.draw, cd.isGold);
 				break;
 
-			case eCardState.tableau:
+			case pCardState.tableau:
 				//Clicking a card in the tableau will check if it's a valid play
 				bool validMatch = true;
 				if (!cd.faceUp)
@@ -331,7 +331,7 @@ public class Pyramid : MonoBehaviour
 		}
 
 		// Check for remaining valid plays
-		foreach (CardProspector cd in tableau)
+		foreach (CardPyramid cd in tableau)
 		{
 			if (AdjacentRank(cd, target))
 			{
@@ -391,7 +391,7 @@ public class Pyramid : MonoBehaviour
 
 
 	// Return true if the two cards are adjacent in rank (A & K wrap around)
-	public bool AdjacentRank(CardProspector c0, CardProspector c1)
+	public bool AdjacentRank(CardPyramid c0, CardPyramid c1)
 	{
 		// If either card is face-down, it's not adjacent
 		if (!c0.faceUp || !c1.faceUp)
@@ -415,6 +415,11 @@ public class Pyramid : MonoBehaviour
 		{
 			return true;
 		}
+
+		if (c0.rank == 13 && c1.rank == 13)
+        {
+			return true;
+        }
 
 		// Otherwise, return false
 		return false;

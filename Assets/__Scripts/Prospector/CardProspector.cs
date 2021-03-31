@@ -24,7 +24,7 @@ public class CardProspector : Card
 
     override public void OnMouseUpAsButton()
     {
-        Pyramid.S.CardClicked(this);
+        Prospector.S.CardClicked(this);
         base.OnMouseUpAsButton();
     }
 }
