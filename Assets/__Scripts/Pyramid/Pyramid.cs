@@ -22,6 +22,7 @@ public class Pyramid : MonoBehaviour
 	public Vector2 fsPosEnd = new Vector2(0.5f, 0.95f);
 	public float reloadDelay = 2f; // 2 sec delay between rounds
 	public Text gameOverText, roundResultText, highScoreText;
+	public Button tryAgainButton, reloadDeckButton, quitButton;
 
 
 
@@ -33,7 +34,11 @@ public class Pyramid : MonoBehaviour
 	public CardPyramid target;
 	public List<CardPyramid> tableau;
 	public List<CardPyramid> discardPile;
+	public List<CardPyramid> targetPile;
 	public FloatingScore fsRun;
+
+	private bool _pickedOrderRunning = false;
+	private List<CardPyramid> pickedCards = new List<CardPyramid>();
 
 
 	void Awake()
@@ -64,6 +69,21 @@ public class Pyramid : MonoBehaviour
 		{
 			roundResultText = go.GetComponent<Text>();
 		}
+		go = GameObject.Find("TryAgain");
+		if (go != null)
+        {
+			tryAgainButton = go.GetComponent<Button>();
+        }
+		go = GameObject.Find("ReloadDeck");
+		if (go != null)
+		{
+			reloadDeckButton = go.GetComponent<Button>();
+		}
+		go = GameObject.Find("Quit");
+		if (go != null)
+		{
+			quitButton = go.GetComponent<Button>();
+		}
 		// Make the end of round texts invisible 
 		ShowResultsUI(false);
 	}
@@ -71,6 +91,9 @@ public class Pyramid : MonoBehaviour
 	{
 		gameOverText.gameObject.SetActive(show);
 		roundResultText.gameObject.SetActive(show);
+		tryAgainButton.gameObject.SetActive(show);
+		reloadDeckButton.gameObject.SetActive(show);
+		quitButton.gameObject.SetActive(show);
 	}
 
 	void Start()
@@ -188,16 +211,16 @@ public class Pyramid : MonoBehaviour
 	{
 		foreach (CardPyramid cd in tableau)
 		{
-			bool fup = true; //Assume the card will be face-up
+			bool faceUp = true; //Assume the card will be face-up
 			foreach (CardPyramid cover in cd.hiddenBy)
 			{
 				//If either of the covering cards are in the tableau
 				if (cover.state == pCardState.tableau)
 				{
-					fup = false; //then this card is face-down
+					faceUp = false; //then this card is face-down
 				}
 			}
-			cd.faceUp = fup; //Set the value on the card
+			cd.faceUp = faceUp; //Set the value on the card
 		}
 	}
 
@@ -230,8 +253,8 @@ public class Pyramid : MonoBehaviour
 
 		//Move to the target position
 		cd.transform.localPosition = new Vector3(
-			layout.multiplier.x * layout.discardPile.x,
-			layout.multiplier.y * layout.multiplier.y,
+			layout.multiplier.x * layout.targetPile.x,
+			layout.multiplier.y * layout.targetPile.y,
 			-layout.discardPile.layerID);
 
 		cd.faceUp = true; //Make it face-up
@@ -239,6 +262,7 @@ public class Pyramid : MonoBehaviour
 		cd.SetSortingLayerName(layout.discardPile.layerName);
 		cd.SetSortOrder(0);
 	}
+
 
 	//Arranges all the cards of the drawPile to show how many are left
 	void UpdateDrawPile()
@@ -269,11 +293,32 @@ public class Pyramid : MonoBehaviour
 	public void CardClicked(CardPyramid cd)
 	{
 		//The reaction is determined by the state of the clicked card
+		SetTableauFaces();
 		switch (cd.state)
 		{
 			case pCardState.target:
-				//Clicking the target card does nothing
+				if (cd.rank == 13)
+				{
+					tableau.Remove(cd);
+					MoveToDiscard(target);
+					MoveToTarget(Draw());
+					ScoreManager.EVENT(eScoreEvent.board, cd.isGold);
+					FloatingScoreHandler(eScoreEvent.board, cd.isGold);
+
+				}
+
+				if (_pickedOrderRunning)
+                {
+					pickedCards.Add(cd);
+				}
+					
+				else
+				{
+					StartCoroutine(PickedCardOrder());
+					pickedCards.Add(cd);
+				}
 				break;
+
 			case pCardState.drawpile:
 				//Clicking any card in the drawPile will draw the next card
 				MoveToDiscard(target); //Moves the target to the discardPile
@@ -286,31 +331,110 @@ public class Pyramid : MonoBehaviour
 			case pCardState.tableau:
 				//Clicking a card in the tableau will check if it's a valid play
 				bool validMatch = true;
+				
 				if (!cd.faceUp)
-				{
-					//If the card is face-down, it's not valid
+                {
 					validMatch = false;
-				}
-				if (!AdjacentRank(cd, target))
-				{
-					//If it's not an adjacent rank, it's not valid
-					validMatch = false;
-				}
+                }
+				
 				if (!validMatch)
 				{
 					return; //Return if not valid
 				}
+				
+				if (cd.rank == 13)
+				{
+					tableau.Remove(cd);
+					MoveToDiscard(cd);
+					ScoreManager.EVENT(eScoreEvent.board, cd.isGold);
+					FloatingScoreHandler(eScoreEvent.board, cd.isGold);
+				}
+
+				if (_pickedOrderRunning)
+					pickedCards.Add(cd);
+
+				
+				else
+                {
+					StartCoroutine(PickedCardOrder());
+					pickedCards.Add(cd);
+					return;
+                }
+
+				if (validMatch)
+                {
+					
+				}
 
 				// If we got here, then: Yay! It's a valid card.
-				tableau.Remove(cd); // Remove it from the tableau list
-				MoveToTarget(cd); // Make it the target card\
-				SetTableauFaces(); // Update tableau card face-ups
-				ScoreManager.EVENT(eScoreEvent.mine, cd.isGold);
-				FloatingScoreHandler(eScoreEvent.mine, cd.isGold);
+				
 				break;
+
+				
 		}
 		// Check to see whether the game is over or not
 		CheckForGameOver();
+	}
+
+	private IEnumerator PickedCardOrder()
+    {
+		_pickedOrderRunning = true;
+		pickedCards.Clear();
+		
+
+		while (pickedCards.Count < 2)
+        {
+			if (pickedCards.Count == 1)
+            {
+				pickedCards[0].gameObject.GetComponent<SpriteRenderer>().color = Color.green;
+            }
+
+			yield return null;
+        }
+
+		if (pickedCards[0].rank + pickedCards[1].rank == 13)
+        {
+			tableau.Remove(pickedCards[0]);
+			tableau.Remove(pickedCards[1]);
+
+			MoveToDiscard(pickedCards[0]);
+			MoveToDiscard(pickedCards[1]);
+
+			ScoreManager.EVENT(eScoreEvent.board, pickedCards[0].isGold);
+			FloatingScoreHandler(eScoreEvent.board, pickedCards[0].isGold);
+
+
+
+
+
+
+
+		}
+		
+		else
+        {
+			StartCoroutine(FlashCards(Color.red, 3, .4f, pickedCards[0], pickedCards[1]));
+		}
+
+		pickedCards[0].gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+		pickedCards.Clear();
+		_pickedOrderRunning = false;
+
+	}
+
+	private IEnumerator FlashCards(Color color, int cycles, float duration, CardPyramid card1, CardPyramid card2)
+	{
+		int currentCycle = cycles;
+		while (currentCycle > 0)
+		{
+			card1.gameObject.GetComponent<SpriteRenderer>().color = Color.red;
+			card2.gameObject.GetComponent<SpriteRenderer>().color = Color.red;
+			yield return new WaitForSeconds(.3f);
+			card1.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+			card2.gameObject.GetComponent<SpriteRenderer>().color = Color.white;
+			yield return new WaitForSeconds(.3f);
+			currentCycle--;
+		}
 	}
 
 	// Test whether the game is over
@@ -338,6 +462,7 @@ public class Pyramid : MonoBehaviour
 				// If there's a valid play, the game's not over
 				return;
 			}
+			
 		}
 
 		// Since there are no valid plays, the game is over
@@ -377,10 +502,11 @@ public class Pyramid : MonoBehaviour
 			FloatingScoreHandler(eScoreEvent.gameLoss, false);
 		}
 		// Reload the scene, resetting the game
-		// SceneManager.LoadScene("__Prospector_Scene_0");
+		// SceneManager.LoadScene("__Pyramid_Scene_0");
 		// Reload the scene in reloadDelay seconds 
 		// This will give the score a moment to travel 
-		Invoke("ReloadLevel", reloadDelay);
+		
+		
 	}
 
 	void ReloadLevel()
@@ -393,6 +519,8 @@ public class Pyramid : MonoBehaviour
 	// Return true if the two cards are adjacent in rank (A & K wrap around)
 	public bool AdjacentRank(CardPyramid c0, CardPyramid c1)
 	{
+
+
 		// If either card is face-down, it's not adjacent
 		if (!c0.faceUp || !c1.faceUp)
 		{
@@ -400,27 +528,22 @@ public class Pyramid : MonoBehaviour
 		}
 
 		// If they are 1 apart, they are adjacent
-		if (Mathf.Abs(c0.rank + c1.rank) == 13)
-		{
-			return (true);
-		}
-
-		// If one is A and the other King, they're adjacent
-		if (c0.rank == 1 && c1.rank == 13)
-		{
-			return true;
-		}
-
-		if (c0.rank == 13 && c1.rank == 1)
-		{
-			return true;
-		}
-
+			
+		
 		if (c0.rank == 13 && c1.rank == 13)
         {
-			return true;
+			return (true);
         }
 
+		if (c0.rank > 0 && c1.rank > 0)
+        {
+			if (Mathf.Abs(c0.rank + c1.rank) == 13)
+			{
+				return (true);
+			}
+
+			return (false);
+		}
 		// Otherwise, return false
 		return false;
 	}
@@ -450,7 +573,7 @@ public class Pyramid : MonoBehaviour
 					fsRun = null; // Clear fsRun so it's created again 
 				}
 				break;
-			case eScoreEvent.mine: // Remove a mine card 
+			case eScoreEvent.board: // Remove a mine card 
 								   // Create a FloatingScore for this score 
 				FloatingScore fs;
 				// Move it from the mousePosition to fsPosRun 

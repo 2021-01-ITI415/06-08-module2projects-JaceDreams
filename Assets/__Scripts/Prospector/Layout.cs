@@ -24,12 +24,14 @@ public class Layout : MonoBehaviour
 	public Vector2 multiplier; //Sets the spacing of the tableau
 
 	//SlotDef references
-	public List<SlotDef> slotDefs; //All the SlotDefs for Row0 - Row3
+	public List<SlotDef> slotDefs; //All the SlotDefs for Row0 - Row6
 	public SlotDef drawPile;
 	public SlotDef discardPile;
+	public SlotDef targetPile;
+
 
 	//This holds all of the possible names for the layers set by layerID
-	public string[] sortingLayerNames = new string[] { "Row0", "Row1", "Row2", "Row3", "Row4", "Row5", "Row6", "Discard", "Draw" };
+	public string[] sortingLayerNames = new string[] { "Row0", "Row1", "Row2", "Row3", "Row4", "Row5", "Row6", "Discard", "Draw", "Target"};
 
 	//This function is called to read in the LayoutXML.xml file
 	public void ReadLayout(string xmlText)
@@ -96,6 +98,10 @@ public class Layout : MonoBehaviour
 
 				case "discardpile":
 					discardPile = tSD;
+					break;
+
+				case "targetpile":
+					targetPile = tSD;
 					break;
 			}
 		}

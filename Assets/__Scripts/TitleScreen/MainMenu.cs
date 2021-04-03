@@ -31,5 +31,13 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene(__Main_Scene);
     }
 
+    public void QuitButton (string __Main_Scene)
+    {
+        SceneManager.LoadScene(__Main_Scene);
+    }
 
+    public void PlayAgainButton()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 0);
+    }
 }

@@ -14,6 +14,8 @@ public enum eScoreEvent
     mineGold,
     gameWin,
     gameLoss,
+    board,
+    boardGold,
 }
 
 // scoreManager handles all of the scoring
@@ -79,6 +81,15 @@ public class ScoreManager : MonoBehaviour
                 break;
 
             case eScoreEvent.mine: // Remove a mine card
+                chain++; // Increase the score chain
+                Debug.Log("isGold: " + isGold);
+                if (isGold) { scoreRun += (2 * chain); }
+                else { scoreRun += chain; }
+                Debug.Log("Current score: " + scoreRun);
+                scoreRun += chain; // add score for this card to run
+                break;
+
+            case eScoreEvent.board: // Remove a mine card
                 chain++; // Increase the score chain
                 Debug.Log("isGold: " + isGold);
                 if (isGold) { scoreRun += (2 * chain); }
