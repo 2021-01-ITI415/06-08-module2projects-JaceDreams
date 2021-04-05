@@ -90,12 +90,13 @@ public class ScoreManager : MonoBehaviour
                 break;
 
             case eScoreEvent.board: // Remove a mine card
-                chain++; // Increase the score chain
+                chain = 0;
+                chain += 10;
                 Debug.Log("isGold: " + isGold);
                 if (isGold) { scoreRun += (2 * chain); }
                 else { scoreRun += chain; }
                 Debug.Log("Current score: " + scoreRun);
-                scoreRun += chain; // add score for this card to run
+                
                 break;
         }
 

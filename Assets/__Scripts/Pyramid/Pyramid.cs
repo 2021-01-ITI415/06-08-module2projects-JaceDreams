@@ -22,7 +22,6 @@ public class Pyramid : MonoBehaviour
 	public Vector2 fsPosEnd = new Vector2(0.5f, 0.95f);
 	public float reloadDelay = 2f; // 2 sec delay between rounds
 	public Text gameOverText, roundResultText, highScoreText;
-	public Button tryAgainButton, reloadDeckButton, quitButton;
 
 
 
@@ -69,21 +68,7 @@ public class Pyramid : MonoBehaviour
 		{
 			roundResultText = go.GetComponent<Text>();
 		}
-		go = GameObject.Find("TryAgain");
-		if (go != null)
-        {
-			tryAgainButton = go.GetComponent<Button>();
-        }
-		go = GameObject.Find("ReloadDeck");
-		if (go != null)
-		{
-			reloadDeckButton = go.GetComponent<Button>();
-		}
-		go = GameObject.Find("Quit");
-		if (go != null)
-		{
-			quitButton = go.GetComponent<Button>();
-		}
+		
 		// Make the end of round texts invisible 
 		ShowResultsUI(false);
 	}
@@ -91,14 +76,11 @@ public class Pyramid : MonoBehaviour
 	{
 		gameOverText.gameObject.SetActive(show);
 		roundResultText.gameObject.SetActive(show);
-		tryAgainButton.gameObject.SetActive(show);
-		reloadDeckButton.gameObject.SetActive(show);
-		quitButton.gameObject.SetActive(show);
 	}
 
 	void Start()
 	{
-		Scoreboard.S.score = ScoreManager.SCORE;
+		PyramidScoreboard.S.score = ScoreManager.SCORE;
 
 		deck = GetComponent<Deck>();
 		deck.InitDeck(deckXML.text);
@@ -227,19 +209,59 @@ public class Pyramid : MonoBehaviour
 	//Moves the current target to the discardPile
 	void MoveToDiscard(CardPyramid cd)
 	{
-		//Set the state of the card to discard
-		cd.state = pCardState.discard;
-		discardPile.Add(cd); //Add it to the discardPile List<>
-		cd.transform.parent = layoutAnchor; //Update its transform parent
-		cd.transform.localPosition = new Vector3(
-			layout.multiplier.x * layout.discardPile.x,
-			layout.multiplier.y * layout.multiplier.y,
-			-layout.discardPile.layerID + 0.5f); //Position it on the discardPile
-		cd.faceUp = true;
+		switch (cd.state)
+        {
+			case pCardState.target:
+				//Set the state of the card to discard
+				cd.state = pCardState.discard;
+				discardPile.Add(cd); //Add it to the discardPile List<>
+				cd.transform.parent = layoutAnchor; //Update its transform parent
+				cd.transform.localPosition = new Vector3(
+					layout.multiplier.x * layout.discardPile.x,
+					layout.multiplier.y * layout.multiplier.y,
+					-layout.discardPile.layerID + 0.5f); //Position it on the discardPile
+				cd.faceUp = true;
 
-		//Place it on top of the pile for depth sorting
-		cd.SetSortingLayerName(layout.discardPile.layerName);
-		cd.SetSortOrder(-100 + discardPile.Count);
+				//Place it on top of the pile for depth sorting
+				cd.SetSortingLayerName(layout.discardPile.layerName);
+				cd.SetSortOrder(100 + discardPile.Count);
+				break;
+
+			case pCardState.tableau:
+				//Set the state of the card to discard
+				cd.state = pCardState.discard;
+				discardPile.Add(cd); //Add it to the discardPile List<>
+				cd.transform.parent = layoutAnchor; //Update its transform parent
+				cd.transform.localPosition = new Vector3(
+					layout.multiplier.x * layout.discardPile.x,
+					layout.multiplier.y * layout.multiplier.y,
+					-layout.discardPile.layerID + 0.5f); //Position it on the discardPile
+				cd.faceUp = true;
+
+				//Place it on top of the pile for depth sorting
+				cd.SetSortingLayerName(layout.discardPile.layerName);
+				cd.SetSortOrder(200 + discardPile.Count);
+				break;
+
+			case pCardState.discard:
+				//Set the state of the card to discard
+				cd.state = pCardState.discard;
+				discardPile.Add(cd); //Add it to the discardPile List<>
+				cd.transform.parent = layoutAnchor; //Update its transform parent
+				cd.transform.localPosition = new Vector3(
+					layout.multiplier.x * layout.discardPile.x,
+					layout.multiplier.y * layout.multiplier.y,
+					-layout.discardPile.layerID + 0.5f); //Position it on the discardPile
+				cd.faceUp = true;
+
+				//Place it on top of the pile for depth sorting
+				cd.SetSortingLayerName(layout.discardPile.layerName);
+				cd.SetSortOrder(300 + discardPile.Count);
+				break;
+		}
+		
+
+
 	}
 
 	//Make cd the new target card
@@ -505,8 +527,8 @@ public class Pyramid : MonoBehaviour
 		// SceneManager.LoadScene("__Pyramid_Scene_0");
 		// Reload the scene in reloadDelay seconds 
 		// This will give the score a moment to travel 
-		
-		
+		Invoke("ReloadLevel", reloadDelay);
+
 	}
 
 	void ReloadLevel()
@@ -566,7 +588,7 @@ public class Pyramid : MonoBehaviour
 					fsPts.Add(fsPosRun);
 					fsPts.Add(fsPosMid2);
 					fsPts.Add(fsPosEnd);
-					fsRun.reportFinishTo = Scoreboard.S.gameObject;
+					fsRun.reportFinishTo = PyramidScoreboard.S.gameObject;
 					fsRun.Init(fsPts, 0, 1);
 					// Also adjust the fontSize 
 					fsRun.fontSizes = new List<float>(new float[] { 28, 36, 4 });
@@ -575,7 +597,7 @@ public class Pyramid : MonoBehaviour
 				break;
 			case eScoreEvent.board: // Remove a mine card 
 								   // Create a FloatingScore for this score 
-				FloatingScore fs;
+				PyramidFloatingScore fs;
 				// Move it from the mousePosition to fsPosRun 
 				Vector2 p0 = Input.mousePosition;
 				p0.x /= Screen.width;
@@ -586,17 +608,10 @@ public class Pyramid : MonoBehaviour
 				fsPts.Add(fsPosRun);
 				int fsNum = ScoreManager.CHAIN;
 				if (isGold) { fsNum *= 2; }
-				fs = Scoreboard.S.CreateFloatingScore(fsNum, fsPts);
+				fs = PyramidScoreboard.S.CreateFloatingScore(fsNum, fsPts);
 				fs.fontSizes = new List<float>(new float[] { 4, 50, 28 });
-				if (fsRun == null)
-				{
-					fsRun = fs;
-					fsRun.reportFinishTo = null;
-				}
-				else
-				{
-					fs.reportFinishTo = fsRun.gameObject;
-				}
+				
+				
 				break;
 		}
 	}

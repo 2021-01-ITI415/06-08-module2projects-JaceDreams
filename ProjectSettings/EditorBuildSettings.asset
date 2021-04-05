@@ -17,10 +17,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/__Pyramid_Scene_0.unity
     guid: 590539d35005a4b449abe1940d81152b
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/__Pyramid_Scene_1.unity
     guid: ecb6f4159bf7fd84098c166e8b4efc7c
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/__Pyramid_Scene_2.unity
     guid: d6be691477f8e4043a35d3ede2425515
   m_configObjects: {}
