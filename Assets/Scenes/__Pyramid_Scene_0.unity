@@ -350,7 +350,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: b89928228802e654194e96b436fbe891, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 0.185
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -575,9 +575,6 @@ MonoBehaviour:
   gameOverText: {fileID: 0}
   roundResultText: {fileID: 0}
   highScoreText: {fileID: 0}
-  tryAgainButton: {fileID: 0}
-  reloadDeckButton: {fileID: 0}
-  quitButton: {fileID: 0}
   deck: {fileID: 0}
   layout: {fileID: 0}
   drawPile: []
